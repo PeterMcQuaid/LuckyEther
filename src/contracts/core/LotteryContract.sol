@@ -13,21 +13,30 @@ import {IPauserRegistry} from "../interfaces/IPauserRegistry.sol";
  * - 
  * 
  * 
- * @dev This implementation contract is both upgradable via the 
+ * @dev This implementation contract is upgradable via the 
  * {TransparentUpgradeableProxy} proxy pattern, and pausable through
  * a pauser registry
  */
-contract LotteryContract is Initializable, PausableUpgradeable {
+contract LotteryContract is PausableUpgradeable {
 
-    /// @dev Defines address of external "PauserRegistry" contract
-    IPauserRegistry private immutable pauserRegistry;
+    /// @dev The external "PauserRegistry" contract
+    IPauserRegistry private pauserRegistry;
 
     /// @notice Exact deposit to enter the lottery raffle
     uint256 private immutable lotteryDeposit;
 
-    constructor() {
+    modifier onlyPauser() {
+        require(pauserRegistry.isPauser(msg.sender), "msg.sender is not authorized as a pauser");
+        _;
+    }
 
+    modifier onlyUnpauser() {
+        require(pauserRegistry.isUnpauser(msg.sender), "msg.sender is not authorized as an unpauser");
+        _;
+    }
 
+    constructor(uint256 _lotteryDeposit) {
+        lotteryDeposit = _lotteryDeposit;
 
         /*
           Prevents "initialize()" from being run in the context 
@@ -40,7 +49,18 @@ contract LotteryContract is Initializable, PausableUpgradeable {
 
     /**
      * @dev Must be called by owner of "ProxyAdmin" within the "upgradeAndCall()" function via
-     * the "bytes memory data" argument, when setting this contract as the implementation
+     * "bytes memory data" argument, when setting this contract as the implementation
      */
-    function initialize() external initializer {}
+    function initialize(IPauserRegistry _pauserRegistry) external initializer {
+        __Pausable_init();
+        pauserRegistry = _pauserRegistry;
+    }
+
+
+
+
+
+
+
+
 }
