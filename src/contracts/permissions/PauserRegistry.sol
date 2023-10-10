@@ -28,10 +28,12 @@ contract PauserRegistry is IPauserRegistry {
     constructor(address[] memory initialPausers, address[] memory initialUnpausers) {
         registryOwner = msg.sender;
 
+        // Set initial pausers
         for (uint256 i = 0; i < initialPausers.length; i++) {
             _updatePauser(initialPausers[i], true);
         }
 
+        // Set initial unpausers
         for (uint256 i = 0; i < initialUnpausers.length; i++) {
             _updateUnpauser(initialUnpausers[i], true);
         }
