@@ -55,12 +55,6 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
     /// @notice Timestamp of previous lottery end
     uint256 private lastBlockTimestamp;
 
-    /**
-     * @notice The number of days the lottery session "lotteryDuration" must be greater 
-     * than the prize expiry duration "prizeExpiry"
-     */
-    uint256 private constant EXPIRY_GAP = 5 days;
-
     /// @notice Number of block confirmations for random number to be acceptable
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
 
@@ -75,6 +69,12 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
 
     /// @notice Duration for current winner to withdraw prize pot
     uint256 private immutable prizeExpiry;
+
+    /**
+     * @notice The number of days the lottery session "lotteryDuration" must be greater 
+     * than the prize expiry duration "prizeExpiry"
+     */
+    uint256 private immutable expiryGap;
 
     /// @notice Address for the ChainLink VRF co-ordinator on a given chain
     VRFCoordinatorV2Interface private immutable chainlinkVrfCoordinator;
@@ -95,13 +95,13 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
     event WinnerSuccessfulWithdraw(address indexed winner, uint256 prize);
 
     /// @notice Emitted when owner of contract withdraws fees from Lottery Treasury
-    event TreasuryFeeWithdrawal(address owner);
-
-    /// @notice Error triggered if "pickWinner()" is called before "lotteryDuration" has expired
-    error InsufficientTimePassed(uint256 timePassed);
+    event TreasuryFeeWithdrawal(address indexed owner, uint256 amount);
 
     /// @notice Error triggered if winner fails to withdraw their prize pot
     error WinnerFailedWithdrawl(); 
+
+    /// @notice Upkeep triggered externally without the current session having expired
+    error UpkeepNotRequired();
 
     modifier onlyPauser() {
         require(pauserRegistry.isPauser(msg.sender), "msg.sender is not authorized as a pauser");
@@ -119,7 +119,7 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
     }
 
     modifier onlyWinner() {
-        require(currentWinner != address(0), "Invalid winner");
+        require(currentWinner != address(0), "Address 0 is an invalid winner");
         require(msg.sender == currentWinner, "Invalid winner, you are not the current winner");
         _;
     }
@@ -128,6 +128,7 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
         uint256 _lotteryDeposit, 
         uint256 _lotteryDuration, 
         uint256 _prizeExpiry,
+        uint256 _expiryGap,
         address _chainlinkVrfCoordinator, 
         bytes32 _vrfKeyHash,
         uint64 _vrfSubscriptionID,
@@ -135,10 +136,11 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
     ) 
         VRFConsumerBaseV2(_chainlinkVrfCoordinator) 
     {
-        require(_lotteryDuration > _prizeExpiry + EXPIRY_GAP, "LotteryContract.constructor: Insufficient gap between expiry and duration");
+        require(_lotteryDuration > _prizeExpiry + _expiryGap, "LotteryContract.constructor: Insufficient gap between expiry and duration");
         lotteryDeposit = _lotteryDeposit;
         lotteryDuration = _lotteryDuration;
         prizeExpiry = _prizeExpiry;
+        expiryGap = _expiryGap;
         lastBlockTimestamp = block.timestamp;
         chainlinkVrfCoordinator = VRFCoordinatorV2Interface(_chainlinkVrfCoordinator);
         vrfKeyHash = _vrfKeyHash;
@@ -187,30 +189,21 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
         emit LotteryDeposit(msg.sender, msg.value);
     }
 
-
-
-
-
-
-
-
-
     /**
-     * @notice Owner triggers random winner selection provided the lottery period has
-     * expired AND there is at least one player in the lottery
+     * @notice Anyone can trigger random winner selection provided the lottery period has
+     * expired AND there is at least one player in the lottery, and the functionality is not currently paused
      */
-    function pickWinner() external onlyOwner whenNotPaused {
-        require(lotteryUsers.length() >= 1, "LotteryContract.pickWinner: Can't raffle a lottery with 0 entrants");
-        uint256 timePassed = block.timestamp - lastBlockTimestamp;
-        if (timePassed < lotteryDuration) {
-            revert InsufficientTimePassed(timePassed);
+    function performUpkeep(bytes calldata /* performData */) external whenNotPaused {
+        (bool upkeepNeeded, ) = checkUpkeep("");
+        if (!upkeepNeeded) {
+            revert UpkeepNotRequired();
         }
 
         // Resets current winner before picking next
         currentWinner = payable(address(0));
 
         // Makes a request to the Chainlink VRF contract. Will revert if subscription is not set and funded
-        uint256 requestId = chainlinkVrfCoordinator.requestRandomWords(
+        chainlinkVrfCoordinator.requestRandomWords(
             vrfKeyHash,
             vrfSubscriptionID,
             REQUEST_CONFIRMATIONS,
@@ -227,7 +220,7 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
         // Checks -> Effects -> Interactions
         address payable winner = currentWinner;
         uint256 prizePayout = lotteryWinnings;
-        lotteryWinnings = 0;
+        lotteryWinnings = 0;    // Resetting snapshot
         currentPrizePot -= prizePayout;
 
         // 2300 gas stipend
@@ -245,14 +238,26 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
      * @dev Owner can only withdraw funds in excess of current user deposit
      */
     function withdraw(uint256 withdrawalAmount) external onlyOwner whenNotPaused {
+        require(withdrawalAmount > 0, "LotteryContract.withdraw: Cannot withdraw 0 Ether");
         //must only be able to withdraw excess of total sum of current user deposits, i.e. require account.balance > sum(user deposits)
         uint256 protocolFees = address(this).balance - currentPrizePot;
         require(withdrawalAmount <= protocolFees, "LotteryContract.withdraw: Insufficient protocol funds for withdrawal amount");
         (bool success, ) = msg.sender.call{gas: 2300, value: withdrawalAmount}("");
         require(success, "LotteryContract.withdraw: Error in transfer of withdrawal amount");
+        emit TreasuryFeeWithdrawal(msg.sender, withdrawalAmount);
     }
 
     // VIEW FUNCTIONS
+
+    /// @notice Returns length of lottery users set
+    function getLotteryUsersLength() external view returns (uint256) {
+        return lotteryUsers.length();
+    }
+
+     /// @notice Returns true if user is in lottery users set, false otherwise
+    function lotteryUsersContains(address user) external view returns (bool) {
+        return lotteryUsers.contains(user);
+    }
 
     /**
      * @notice Getter function for private payable address "currentWinner"
@@ -260,6 +265,11 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
      */
     function getCurrentWinner() external view returns (address) {
         return currentWinner;
+    }
+
+    /// @notice Getter function for private uint256 "lotteryWinnings"
+    function getLotteryWinnings() external view returns (uint256) {
+        return lotteryWinnings;
     }
 
     /// @notice Getter function for private uint256 "currentPrizePot"
@@ -282,27 +292,35 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
         return prizeExpiry;
     }
 
+    /// @notice Getter function for private immutable "lastBlockTimestamp"
+    function getLastBlockTimestamp() external view returns (uint256) {
+        return lastBlockTimestamp;
+    }
+
     /**
      * @notice Called by Chainlink automation nodes to check if it's time to perform an upkeep
-     * @param null 
-     * @return upkeepNeeded 
-     * @return 
+     * @return upkeepNeeded bool, whether or not a new winner can be drawn (current lottery session has expired) 
+     * @return performData for caller, currently unused
      * @dev This function includes all the logic of a check that we would otherwise perform
+     * @dev Public because we will call this function as a double-check in "performUpkeep()"
      */
     function checkUpkeep(bytes memory /* checkData */) public view returns (bool upkeepNeeded, bytes memory /* performData */) {
-        
+        if((lotteryUsers.length() == 0) || ((block.timestamp - lastBlockTimestamp) < lotteryDuration)) {
+            return (false, "");     // Return an empty bytes value for the unused parameter
+        } else {
+            return (true, "");    // Similarly, return an empty bytes value 
+        }
     }
 
     // INTERNAL FUNCTIONS
 
     /**
      * @notice Function to receive random number via VRF callback
-     * @param _requestId ID for given VRF request. Currently unused
      * @param _randomWords Array of VRF random numbers (our result(s))
      * @dev Chainlink node will call the VRF coordinator on given chain, who in turn will this function 
      * (via external counterpart) to provide random number
      */
-    function fulfillRandomWords(uint256 /* _requestId */, uint256[] memory _randomWords) internal override {
+    function fulfillRandomWords(uint256 /* _requestId */, uint256[] memory _randomWords) internal override whenNotPaused {
         // Bound the winning index to the number of entrants in current round
         uint256 winnerIndex = _randomWords[0] % lotteryUsers.length();
         currentWinner = payable(lotteryUsers.at(winnerIndex));
@@ -311,7 +329,7 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
         currentPrizePot = (currentPrizePot * 995) / 1000;   
 
         // Snapshots session ending pot size and time
-        lotteryWinnings = currentPrizePot; 
+        lotteryWinnings = currentPrizePot;  // Also resets winnins in case previous winner didn't claim pot
         lastBlockTimestamp = block.timestamp;
 
         // Clearing entire current lottery set
@@ -320,7 +338,7 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
 
     // PRIVATE FUNCTIONS
 
-    /// @notice Completely clears current lottery set
+    /// @notice Completely clears current lottery set, potentially gas intensive
     function clearSet() private {
         uint256 length = lotteryUsers.length();
         for (uint256 i = 0; i < length; i++) {

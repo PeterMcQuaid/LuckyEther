@@ -1,11 +1,7 @@
 # Compiler files
 cache/
 out/
-
-broadcast
-
-# Docs
-docs/
+broadcast/
 
 # Dotenv file
 .env

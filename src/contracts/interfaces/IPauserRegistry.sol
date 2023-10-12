@@ -8,9 +8,9 @@ pragma solidity 0.8.20;
  * interface will implement getters
  */
 interface IPauserRegistry {
-    event PauserStatusChanged(address pauser, bool canPause);
+    event PauserStatusChanged(address indexed pauser, bool canPause);
 
-    event UnpauserStatusChanged(address unpauser, bool canUnpause);
+    event UnpauserStatusChanged(address indexed unpauser, bool canUnpause);
 
     event RegistryOwnerChanged(address previousRegistryOwner, address newRegistryOwner);
 

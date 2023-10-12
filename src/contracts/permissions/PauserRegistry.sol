@@ -21,7 +21,7 @@ contract PauserRegistry is IPauserRegistry {
     mapping(address => bool) public isUnpauser;
 
     modifier onlyRegistryOwner() {
-        require(msg.sender == registryOwner);
+        require(msg.sender == registryOwner, "Invalid sender, not the current owner");
         _;
     }
 
