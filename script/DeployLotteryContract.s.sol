@@ -15,7 +15,9 @@ contract EmptyContractDeployScript is Script {
     address internal DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
 
     function run() external returns (EmptyContract emptyContract) {
+        vm.startBroadcast(DEPLOYER_ADDRESS);
         emptyContract = new EmptyContract();
+        vm.stopBroadcast();
     }
 }
 
@@ -25,11 +27,13 @@ contract TransparentUpgradeableProxyDeployScript is Script {
 
     function run(EmptyContract _emptyContract) external returns (TransparentUpgradeableProxy transparentUpgradeableProxy, ProxyAdmin proxyAdmin) {
         vm.recordLogs();
+        vm.startBroadcast(DEPLOYER_ADDRESS);
         transparentUpgradeableProxy = new TransparentUpgradeableProxy(
             address(_emptyContract),
             DEPLOYER_ADDRESS,
             ""
         );
+        vm.stopBroadcast();
         Vm.Log[] memory entries = vm.getRecordedLogs();
         (, address newAdmin) = abi.decode(entries[2].data, (address, address));
         console.log("New admin is: %s", newAdmin);

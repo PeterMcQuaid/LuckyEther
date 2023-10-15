@@ -17,7 +17,7 @@ import {EmptyContractDeployScript,
     LotteryDeployScript, 
     InitializeImplementationScript, 
     UpdateProxyAdminOwnerScript} from "../../script/DeployLotteryContract.s.sol";
-import {DeployPauserRegistry, UpdatePauserRegistryOwnerScript} from "../../script/DeployPauserRegistry.s.sol";
+import {DeployPauserRegistry} from "../../script/DeployPauserRegistry.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 
 contract Integrations is Test {
@@ -32,7 +32,6 @@ contract Integrations is Test {
     TransparentUpgradeableProxyDeployScript transparentUpgradeableProxyDeployer = new TransparentUpgradeableProxyDeployScript();
     EmptyContractDeployScript emptyContractDeployer = new EmptyContractDeployScript();
     DeployPauserRegistry pauserRegistryDeployer = new DeployPauserRegistry();
-    UpdatePauserRegistryOwnerScript updatePauserRegistryOwnerScript = new UpdatePauserRegistryOwnerScript();
     LotteryDeployScript deployer = new LotteryDeployScript();
     InitializeImplementationScript initializeImplementationScript = new InitializeImplementationScript();
 
@@ -45,6 +44,8 @@ contract Integrations is Test {
     address internal PAUSER_TWO = makeAddr("pauserTwo");
     address internal UNPAUSER_ONE = makeAddr("unpauserOne");
     address internal UNPAUSER_TWO = makeAddr("unpauserTwo");
+    address[] internal initialPausers = [PAUSER_ONE, PAUSER_TWO];
+    address[] internal initialUnpausers = [UNPAUSER_ONE, UNPAUSER_TWO];
 
     uint256 internal lotteryDeposit;
     uint256 internal lotteryDuration;
@@ -83,7 +84,7 @@ contract Integrations is Test {
         (transparentUpgradeableProxy, proxyAdmin) = transparentUpgradeableProxyDeployer.run(emptyContract);
 
         // Deploy PauserRegistry
-        pauserRegistry = pauserRegistryDeployer.run();
+        pauserRegistry = pauserRegistryDeployer.run(initialPausers, initialUnpausers);
 
         // Deploy LotteryContract
         (lotteryContract, helperConfig) = deployer.run();

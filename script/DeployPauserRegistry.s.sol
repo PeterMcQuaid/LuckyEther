@@ -8,18 +8,10 @@ import {IPauserRegistry} from "../src/contracts/interfaces/IPauserRegistry.sol";
 contract DeployPauserRegistry is Script {
     address internal DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
 
-    address internal NEW_OWNER = makeAddr("newOwner");
-    address internal PAUSER_ONE = makeAddr("pauserOne");
-    address internal PAUSER_TWO = makeAddr("pauserTwo");
-    address internal UNPAUSER_ONE = makeAddr("unpauserOne");
-    address internal UNPAUSER_TWO = makeAddr("unpauserTwo");
-
-    address[] internal initialPausers = [PAUSER_ONE, PAUSER_TWO];
-    address[] internal initialUnpausers = [UNPAUSER_ONE, UNPAUSER_TWO];
-
-    function run() external returns(PauserRegistry) {
-        vm.broadcast(DEPLOYER_ADDRESS);
-        PauserRegistry pauserRegistry = new PauserRegistry(initialPausers, initialUnpausers);
+    function run(address[] memory _initialPausers, address[] memory _initialUnpausers) external returns(PauserRegistry) {
+        vm.startBroadcast(DEPLOYER_ADDRESS);
+        PauserRegistry pauserRegistry = new PauserRegistry(_initialPausers, _initialUnpausers);
+        vm.stopBroadcast();
         return pauserRegistry;
     }
 }
@@ -27,19 +19,9 @@ contract DeployPauserRegistry is Script {
 contract UpdatePauserRegistryOwnerScript is Script {
     address internal DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
 
-    address internal NEW_OWNER = makeAddr("newOwner");
-    address internal PAUSER_ONE = makeAddr("pauserOne");
-    address internal PAUSER_TWO = makeAddr("pauserTwo");
-    address internal UNPAUSER_ONE = makeAddr("unpauserOne");
-    address internal UNPAUSER_TWO = makeAddr("unpauserTwo");
-
-    address[] internal initialPausers = [PAUSER_ONE, PAUSER_TWO];
-    address[] internal initialUnpausers = [UNPAUSER_ONE, UNPAUSER_TWO];
-
-
-    function run(IPauserRegistry pauserRegistry) external {
+    function run(address _pauserRegistry, address _newOwner) external {
         vm.startBroadcast(DEPLOYER_ADDRESS);
-        pauserRegistry.updateRegistryOwner(NEW_OWNER);
+        IPauserRegistry(_pauserRegistry).updateRegistryOwner(_newOwner);
         vm.stopBroadcast();
     }
 }

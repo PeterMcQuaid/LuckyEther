@@ -25,6 +25,12 @@ contract DeployScripts is Test {
 
     address internal DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
     address internal NEW_OWNER = makeAddr("newOwner");
+    address internal PAUSER_ONE = makeAddr("pauserOne");
+    address internal PAUSER_TWO = makeAddr("pauserTwo");
+    address internal UNPAUSER_ONE = makeAddr("unpauserOne");
+    address internal UNPAUSER_TWO = makeAddr("unpauserTwo");
+    address[] internal initialPausers = [PAUSER_ONE, PAUSER_TWO];
+    address[] internal initialUnpausers = [UNPAUSER_ONE, UNPAUSER_TWO];
 
     function setUp() external {
     }
@@ -51,15 +57,15 @@ contract DeployScripts is Test {
 
     function test_DeployPauserRegistry() external {
         DeployPauserRegistry pauserRegistryDeployer = new DeployPauserRegistry();
-        pauserRegistry = pauserRegistryDeployer.run();
+        pauserRegistry = pauserRegistryDeployer.run(initialPausers, initialUnpausers);
         assertEq(pauserRegistry.registryOwner(), DEPLOYER_ADDRESS);
     }
 
     function test_PauserRegistryScriptOwnerUpdated() external {
         DeployPauserRegistry pauserRegistryDeployer = new DeployPauserRegistry();
-        pauserRegistry = pauserRegistryDeployer.run();
+        pauserRegistry = pauserRegistryDeployer.run(initialPausers, initialUnpausers);
         UpdatePauserRegistryOwnerScript updatePauserRegistryOwnerScript = new UpdatePauserRegistryOwnerScript();
-        updatePauserRegistryOwnerScript.run(pauserRegistry);
+        updatePauserRegistryOwnerScript.run(address(pauserRegistry), NEW_OWNER);
         assertEq(pauserRegistry.registryOwner(), NEW_OWNER);
     }  
 }
