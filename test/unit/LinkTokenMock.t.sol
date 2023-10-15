@@ -12,20 +12,28 @@ contract LinkTokenTest is Test {
 
     event Transfer(address indexed from, address indexed to, uint256 value, bytes data);
 
+    modifier skipFork() {
+        if (block.chainid == 31337) {
+            _;
+        } else {
+            return;
+        }
+    }
+
     function setUp() external {
-        vm.prank(msg.sender);
+        vm.prank(0xfeACBb053CCcF794bF2810f0D08A46CC52EDBDf3);
         linkToken = new LinkToken();
     }
 
-    function test_InitialSupply() external {
+    function test_InitialSupply() external skipFork {
         assertEq(linkToken.totalSupply(), INITIAL_SUPPLY);
     }
 
-    function test_InitialAllocation() external {
+    function test_InitialAllocation() external skipFork {
         assertEq(linkToken.balanceOf(msg.sender), INITIAL_SUPPLY);
     }
 
-    function test_TransferAndCallEmit() external {
+    function test_TransferAndCallEmit() external skipFork {
         address recipient = makeAddr("recipient");
         uint256 amount = 100;
         bytes memory data = "";

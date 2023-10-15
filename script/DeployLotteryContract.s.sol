@@ -2,35 +2,45 @@
 pragma solidity 0.8.20;
 
 import {Script, console} from "forge-std/Script.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {LotteryContract} from "../src/contracts/core/LotteryContract.sol";
 import {EmptyContract} from "../src/test/mocks/EmptyContract.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 import {CreateSubscription, FundSubscription, AddConsumer} from "./Interactions.s.sol";
-
-contract ProxyAdminDeployScript is Script {
-    function run() external returns (ProxyAdmin proxyAdmin) {
-        
-    }
-}
-
+import {IPauserRegistry} from "../src/contracts/interfaces/IPauserRegistry.sol";
 
 contract EmptyContractDeployScript is Script {
+    address internal DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
+
     function run() external returns (EmptyContract emptyContract) {
-        
+        emptyContract = new EmptyContract();
     }
 }
 
 
 contract TransparentUpgradeableProxyDeployScript is Script {
-    function run() external returns (TransparentUpgradeableProxy transparentUpgradeableProxy) {
-        
+    address internal DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
+
+    function run(EmptyContract _emptyContract) external returns (TransparentUpgradeableProxy transparentUpgradeableProxy, ProxyAdmin proxyAdmin) {
+        vm.recordLogs();
+        transparentUpgradeableProxy = new TransparentUpgradeableProxy(
+            address(_emptyContract),
+            DEPLOYER_ADDRESS,
+            ""
+        );
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        (, address newAdmin) = abi.decode(entries[2].data, (address, address));
+        console.log("New admin is: %s", newAdmin);
+        return (transparentUpgradeableProxy, ProxyAdmin(newAdmin));
     }
 }
 
 
 contract LotteryDeployScript is Script {
+    address internal DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
+
     function run() external returns (LotteryContract lotteryContract, HelperConfig helperConfig) {
         helperConfig = new HelperConfig();
         (
@@ -53,7 +63,7 @@ contract LotteryDeployScript is Script {
             fundSubscription.fundSubscription(chainlinkVrfCoordinator, vrfSubscriptionID, link);
         }
 
-        vm.startBroadcast();
+        vm.startBroadcast(DEPLOYER_ADDRESS);
         lotteryContract = new LotteryContract(
             lotteryDeposit, 
             lotteryDuration, 
@@ -74,14 +84,33 @@ contract LotteryDeployScript is Script {
 
 
 contract InitializeImplementationScript is Script {
-    function run() external {
-        
-    }
+    address internal DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
+
+    function run(
+        ProxyAdmin _proxyAdmin, 
+        ITransparentUpgradeableProxy _transparentUpgradeableProxy,
+        address _lotteryContract,
+        IPauserRegistry _pauserRegistry
+        ) external 
+        {
+            vm.startBroadcast(DEPLOYER_ADDRESS);
+            _proxyAdmin.upgradeAndCall(
+                _transparentUpgradeableProxy,
+                _lotteryContract,
+                abi.encodeWithSignature("initialize(address)", _pauserRegistry)
+            );
+            vm.stopBroadcast();
+        }
 }
 
 
+// Update owner from deployer EOA to community multisig
 contract UpdateProxyAdminOwnerScript is Script {
-    function run() external {
-        
+    address internal DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
+
+    function run(ProxyAdmin _proxyAdmin, address communityMultisig) external {
+        vm.startBroadcast(DEPLOYER_ADDRESS);
+        _proxyAdmin.transferOwnership(communityMultisig);
+        vm.stopBroadcast();
     }
 }

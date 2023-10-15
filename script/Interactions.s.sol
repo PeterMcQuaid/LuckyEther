@@ -9,6 +9,8 @@ import {LinkToken} from "../test/mocks/LinkToken.sol";
 
 
 contract CreateSubscription is Script {
+    address internal DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
+
     function createSubscriptionUsingConfig() internal returns (uint64) {
         HelperConfig helperConfig = new HelperConfig();
         (, , , , address chainlinkVrfCoordinator, , , , ) = helperConfig.activeNetworkConfig();
@@ -16,7 +18,7 @@ contract CreateSubscription is Script {
     }
 
     function createSubscription(address vrfCoordinator) public returns (uint64 subId) {
-        vm.startBroadcast();
+        vm.startBroadcast(DEPLOYER_ADDRESS);
         subId = VRFCoordinatorV2Mock(vrfCoordinator).createSubscription();
         console.log("Subscription created with id: %s on chain: %s", subId, block.chainid);
         vm.stopBroadcast();
@@ -29,6 +31,8 @@ contract CreateSubscription is Script {
 
 
 contract FundSubscription is Script {
+    address internal DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
+
     uint96 public constant FUND_AMOUNT = 1e18;  // 1 LINK
 
     function fundSubscriptionUsingConfig() public {
@@ -40,7 +44,7 @@ contract FundSubscription is Script {
     function fundSubscription(address vrfCoordinator, uint64 subId, address link) public {
         console.log("Funding subscription with: %s LINK", (FUND_AMOUNT)/1e18);
         if (block.chainid == 31337) {
-            vm.startBroadcast();
+            vm.startBroadcast(DEPLOYER_ADDRESS);
             VRFCoordinatorV2Mock(vrfCoordinator).fundSubscription(subId, FUND_AMOUNT);  // Mock used as interface
             vm.stopBroadcast();
         } else {
@@ -58,6 +62,8 @@ contract FundSubscription is Script {
 
 
 contract AddConsumer is Script {
+    address internal DEPLOYER_ADDRESS = vm.envAddress("DEPLOYER_ADDRESS");
+
     function addConsumerUsingConfig(address lottery) public {
         HelperConfig helperConfig = new HelperConfig();
         (, , , , address chainlinkVrfCoordinator, , uint64 subId, , ) = helperConfig.activeNetworkConfig();
@@ -66,7 +72,7 @@ contract AddConsumer is Script {
 
     function addConsumer(address lottery, address vrfCoordinator, uint64 subId) public {
         console.log("Adding consumer LotteryContract: %s", lottery);
-        vm.startBroadcast();
+        vm.startBroadcast(DEPLOYER_ADDRESS);
         VRFCoordinatorV2Mock(vrfCoordinator).addConsumer(subId, lottery);    // Mock used as interface
         vm.stopBroadcast();
     }

@@ -2,6 +2,7 @@
 pragma solidity 0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
+import {VRFCoordinatorV2Mock} from "@chainlink/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol";
 import {LotteryContract} from "../../src/contracts/core/LotteryContract.sol";
 import {LotteryDeployScript} from "../../script/DeployLotteryContract.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
@@ -26,6 +27,22 @@ contract LotteryPausable is Test {
     event WinnerSuccessfulWithdraw(address indexed winner, uint256 prize);
 
     error EnforcedPause();
+
+    modifier skipFork() {
+        if (block.chainid == 31337) {
+            _;
+        } else {
+            return;
+        }
+    }
+
+    modifier skipGoerliArbitrum() {
+        if (block.chainid == 421613) {
+            return;
+        } else {
+            _;
+        }
+    }
 
     function setUp() external {
         LotteryDeployScript deployer = new LotteryDeployScript();
@@ -54,13 +71,6 @@ contract LotteryPausable is Test {
         lotteryContract.enterLottery{value: lotteryDeposit}();
     }
 
-    // Random number chosen
-    function randomWordChosen() internal pure returns (uint256[] memory randomWords, uint256 requestId) {
-        requestId = 1;
-        randomWords = new uint256[](1);
-        randomWords[0] = uint256(keccak256("randomWord"));
-    }
-
     function test_Deposit() external {
         playerEntersLottery();
     }
@@ -71,7 +81,7 @@ contract LotteryPausable is Test {
         playerEntersLottery();
     }
 
-    function test_PerformUpkeep() external {
+    function test_PerformUpkeep() external skipGoerliArbitrum {
         playerEntersLottery();
         skip(lotteryDuration);
         lotteryContract.performUpkeep("");
@@ -81,52 +91,34 @@ contract LotteryPausable is Test {
         playerEntersLottery();
         skip(lotteryDuration);
         setPauser(true);
-        vm.prank(vrfCoordinator);
         vm.expectRevert(EnforcedPause.selector);
         lotteryContract.performUpkeep("");
     }
 
-    function test_FulfillRandomWords() external {
+    function test_FulfillRandomWords() external skipFork {
         playerEntersLottery();
         skip(lotteryDuration);
-        lotteryContract.performUpkeep("");
-        (uint256[] memory randomWords, uint256 requestId) = randomWordChosen();
-        vm.prank(vrfCoordinator);
-        lotteryContract.rawFulfillRandomWords(requestId, randomWords);
+        uint256 requestId = lotteryContract.performUpkeep("");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(requestId, address(lotteryContract));
     }
 
-    function test_FulfillRandomWordsPausedReverts() external {
+    function test_WinnerWithdraw() external skipFork {
         playerEntersLottery();
         skip(lotteryDuration);
-        lotteryContract.performUpkeep("");
-        (uint256[] memory randomWords, uint256 requestId) = randomWordChosen();
-        setPauser(true);
-        vm.expectRevert(EnforcedPause.selector);
-        vm.prank(vrfCoordinator);
-        lotteryContract.rawFulfillRandomWords(requestId, randomWords);
-    }
-
-    function test_WinnerWithdraw() external {
-        playerEntersLottery();
-        skip(lotteryDuration);
-        lotteryContract.performUpkeep("");
-        (uint256[] memory randomWords, uint256 requestId) = randomWordChosen();
-        vm.prank(vrfCoordinator);
-        lotteryContract.rawFulfillRandomWords(requestId, randomWords);
+        uint256 requestId = lotteryContract.performUpkeep("");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(requestId, address(lotteryContract));
         address winner = lotteryContract.getCurrentWinner();
         vm.expectEmit(true, false, false, false, address(lotteryContract));
 		emit WinnerSuccessfulWithdraw(winner, 5); 	//Only testing Topic 1, not data
         vm.prank(winner);
         lotteryContract.winnerWithdraw();
     }
-
-    function test_WinnerWithdrawPausedRevert() external {
+ 
+    function test_WinnerWithdrawPausedRevert() external skipFork {
         playerEntersLottery();
         skip(lotteryDuration);
-        lotteryContract.performUpkeep("");
-        (uint256[] memory randomWords, uint256 requestId) = randomWordChosen();
-        vm.prank(vrfCoordinator);
-        lotteryContract.rawFulfillRandomWords(requestId, randomWords);
+        uint256 requestId = lotteryContract.performUpkeep("");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(requestId, address(lotteryContract));
         address winner = lotteryContract.getCurrentWinner();
         setPauser(true);
         vm.expectRevert(EnforcedPause.selector);

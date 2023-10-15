@@ -165,6 +165,7 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
         __Ownable_init(tx.origin);            // Initialize ownable with tx.origin
         __Pausable_init();                    // Initialize pausable 
         __ReentrancyGuard_init();             // Initialize reentrancyguard
+        lastBlockTimestamp = block.timestamp; // Initializing lastBlockTimestamp for Proxy
     }
 
     /// @notice Pauses contract functionality temporarily
@@ -193,7 +194,7 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
      * @notice Anyone can trigger random winner selection provided the lottery period has
      * expired AND there is at least one player in the lottery, and the functionality is not currently paused
      */
-    function performUpkeep(bytes calldata /* performData */) external whenNotPaused {
+    function performUpkeep(bytes calldata /* performData */) external whenNotPaused returns (uint256 requestId) {
         (bool upkeepNeeded, ) = checkUpkeep("");
         if (!upkeepNeeded) {
             revert UpkeepNotRequired();
@@ -203,7 +204,7 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
         currentWinner = payable(address(0));
 
         // Makes a request to the Chainlink VRF contract. Will revert if subscription is not set and funded
-        chainlinkVrfCoordinator.requestRandomWords(
+        requestId = chainlinkVrfCoordinator.requestRandomWords(
             vrfKeyHash,
             vrfSubscriptionID,
             REQUEST_CONFIRMATIONS,

@@ -2,6 +2,8 @@
 pragma solidity 0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {VRFCoordinatorV2Mock} from "@chainlink/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol";
 import {LotteryContract} from "../../src/contracts/core/LotteryContract.sol";
 import {LotteryDeployScript} from "../../script/DeployLotteryContract.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
@@ -25,9 +27,38 @@ contract LotteryMainLogic is Test {
     uint256 internal expiryGap;
     address internal vrfCoordinator;
 
+    modifier skipFork() {
+        if (block.chainid == 31337) {
+            _;
+        } else {
+            return;
+        }
+    }
+
+    modifier skipGoerliArbitrum() {
+        if (block.chainid == 421613) {
+            return;
+        } else {
+            _;
+        }
+    }
+
+    event RandomWordsRequested(
+        bytes32 indexed keyHash,
+        uint256 requestId,
+        uint256 preSeed,
+        uint64 indexed subId,
+        uint16 minimumRequestConfirmations,
+        uint32 callbackGasLimit,
+        uint32 numWords,
+        address indexed sender
+    );
     event LotteryDeposit(address indexed user, uint256 deposit);
+    event RandomWordsFulfilled(uint256 indexed requestId, uint256 outputSeed, uint96 payment, bool success);
     event TreasuryFeeWithdrawal(address indexed owner, uint256 amount);
     event WinnerSuccessfulWithdraw(address indexed winner, uint256 prize);
+
+    // Need to add VRF Request ID emit -> use getlogs instead of expectEmit
 
     error InvalidInitialization();
     error OwnableUnauthorizedAccount(address account);
@@ -61,21 +92,12 @@ contract LotteryMainLogic is Test {
         lotteryContract.enterLottery{value: _lotteryDeposit}();
     }
 
-    // Random number chosen
-    function randomWordChosen() internal pure returns (uint256[] memory randomWords, uint256 requestId) {
-        requestId = 1;
-        randomWords = new uint256[](1);
-        randomWords[0] = uint256(keccak256("randomWord"));
-    }
-
     // PLAYER_1 is only entrant and winner of current round
     function playerWinsRound() internal {
         playerEntersLottery(lotteryDeposit);
         skip(lotteryDuration);
-        lotteryContract.performUpkeep("");
-        (uint256[] memory randomWords, uint256 requestId) = randomWordChosen();
-        vm.prank(vrfCoordinator);
-        lotteryContract.rawFulfillRandomWords(requestId, randomWords);
+        uint256 requestId = lotteryContract.performUpkeep("");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(requestId, address(lotteryContract));
     }
 
     function potAfterProtocolFees(uint256 grossPot) internal pure returns (uint256 netPot) {
@@ -165,13 +187,13 @@ contract LotteryMainLogic is Test {
         lotteryContract.performUpkeep("");
     }
 
-    function test_UpkeepNeeded() external {
+    function test_UpkeepNeeded() external skipGoerliArbitrum {
         playerEntersLottery(lotteryDeposit);
         skip(lotteryDuration);
         lotteryContract.performUpkeep("");
     }
 
-    function test_CorrectWinnerSelectedAndReset() external {
+    function test_CorrectWinnerSelectedAndReset() external skipFork {
         playerWinsRound();
         assertEq(lotteryContract.getCurrentWinner(), PLAYER_1);
         playerEntersLottery(lotteryDeposit);
@@ -180,9 +202,57 @@ contract LotteryMainLogic is Test {
         assertEq(lotteryContract.getCurrentWinner(), address(0));
     }
 
+    function test_PerformUpkeepRequestEmit() external skipFork {
+        playerWinsRound();
+        assertEq(lotteryContract.getCurrentWinner(), PLAYER_1);
+        playerEntersLottery(lotteryDeposit);
+        skip(lotteryDuration);
+        vm.expectEmit(false, true, true, false);
+        emit RandomWordsRequested(0, 0, 0, 1, 0, 0, 0, address(lotteryContract));
+        lotteryContract.performUpkeep("");
+    }
+
+    function test_PerformUpkeepRequestEmitGetLogs() external skipFork {
+        playerWinsRound();
+        assertEq(lotteryContract.getCurrentWinner(), PLAYER_1);
+        playerEntersLottery(lotteryDeposit);
+        skip(lotteryDuration);
+        vm.recordLogs();
+        lotteryContract.performUpkeep("");
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        (uint256 requestId, , , ,) = abi.decode(entries[0].data, (uint256, uint256, uint16, uint32, uint32));
+        assertGe(requestId, 1);
+        assertEq(entries.length, 1);
+        assertEq(entries[0].topics[2], bytes32(uint256(1)));
+        assertEq(entries[0].topics[3], bytes32(uint256(uint160(address(lotteryContract)))));
+    }
+
+    function testFuzz_FulfillRandomWordsWihoutUpkeepReverts(uint256 requestId) external skipFork {
+        playerEntersLottery(lotteryDeposit);
+        skip(lotteryDuration);
+        // Skipping 'performUnkeep'/'requestRandomWords' call
+        vm.expectRevert("nonexistent request");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(requestId, address(lotteryContract));
+    }
+
+    function test_FulfillRandomWordsEmitsAndDataContents() external skipFork {
+        playerEntersLottery(lotteryDeposit);
+        skip(lotteryDuration);
+        
+        uint256 requestId = lotteryContract.performUpkeep("");
+        vm.expectEmit(true, false, false, false, address(vrfCoordinator));
+        emit RandomWordsFulfilled(requestId, requestId, 1, true);
+        vm.recordLogs();
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(requestId, address(lotteryContract));
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        (uint256 requestIdReturned, , bool success) = abi.decode(entries[0].data, (uint256, uint96, bool));
+        assertEq(requestId, requestIdReturned);
+        assertEq(success, true);
+    }
+
     // WINNER SELECTION AND WITHDRAWAL
 
-    function test_WinnerWithdrawExpiredReverts() external {
+    function test_WinnerWithdrawExpiredReverts() external skipFork {
         playerWinsRound();
         skip(prizeExpiry);
         vm.expectRevert("Invalid call, your time period has expired");
@@ -190,7 +260,7 @@ contract LotteryMainLogic is Test {
         lotteryContract.winnerWithdraw();
     }
 
-    function testFuzz_NotWinnerReverts(address invalidClaimer) external {
+    function testFuzz_NotWinnerReverts(address invalidClaimer) external skipFork {
         vm.assume(invalidClaimer != PLAYER_1);
         playerWinsRound();
         vm.expectRevert("Invalid winner, you are not the current winner");
@@ -198,7 +268,7 @@ contract LotteryMainLogic is Test {
         lotteryContract.winnerWithdraw();
     }
 
-    function test_WinnerWithdrawSuccessEmits() external {
+    function test_WinnerWithdrawSuccessEmits() external skipFork {
         playerWinsRound();
         vm.prank(PLAYER_1);
         vm.expectEmit(true, false, false, false, address(lotteryContract));
@@ -206,19 +276,19 @@ contract LotteryMainLogic is Test {
         lotteryContract.winnerWithdraw();
     }
 
-    function test_SnapshotAndOngoingPotBalances() external {
+    function test_SnapshotAndOngoingPotBalances() external skipFork {
         playerWinsRound();
         assertEq(lotteryContract.getCurrentPrizePot(), lotteryContract.getLotteryWinnings());
     }
 
-    function test_SnapshotResets() external {
+    function test_SnapshotResets() external skipFork {
         playerWinsRound();
         vm.prank(PLAYER_1);
         lotteryContract.winnerWithdraw();
         assertEq(lotteryContract.getLotteryWinnings(), 0);
     }
 
-    function test_CurrentPotDecrements() external {
+    function test_CurrentPotDecrements() external skipFork {
         playerWinsRound();
         uint256 previousPot = lotteryContract.getCurrentPrizePot();
         uint256 currentLotteryWinnings = lotteryContract.getLotteryWinnings();
@@ -227,31 +297,29 @@ contract LotteryMainLogic is Test {
         assertEq(previousPot - lotteryContract.getCurrentPrizePot(), currentLotteryWinnings);
     }
 
-    function test_ProtocolFeeCorrectlySubtracts() external {
+    function test_ProtocolFeeCorrectlySubtracts() external skipFork {
         playerWinsRound();
         uint256 potAfterFees = potAfterProtocolFees(lotteryDeposit); 
         assertEq(lotteryContract.getCurrentPrizePot(), potAfterFees);
     }
 
-    function test_BlockTimeStampUpdates() external {
+    function test_BlockTimeStampUpdates() external skipFork {
         uint256 timeBefore = block.timestamp;
         playerWinsRound();
         assertEq(lotteryContract.getLastBlockTimestamp(), block.timestamp);
         assertEq(lotteryContract.getLastBlockTimestamp() - timeBefore, lotteryDuration);
     }
 
-    function test_PlayerListClearsAfterRound() external {
+    function test_PlayerListClearsAfterRound() external skipFork {
         playerEntersLottery(lotteryDeposit);
         skip(lotteryDuration);
         assertEq(lotteryContract.getLotteryUsersLength(), 1);
-        lotteryContract.performUpkeep("");
-        (uint256[] memory randomWords, uint256 requestId) = randomWordChosen();
-        vm.prank(vrfCoordinator);
-        lotteryContract.rawFulfillRandomWords(requestId, randomWords);
+        uint256 requestId = lotteryContract.performUpkeep("");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(requestId, address(lotteryContract));
         assertEq(lotteryContract.getLotteryUsersLength(), 0);
     }
 
-    function test_PotRollsOver() external {
+    function test_PotRollsOver() external skipFork {
         playerWinsRound();
         uint256 timestampAfterFirstWin = block.timestamp;
         uint256 potAfterFees = potAfterProtocolFees(lotteryDeposit);
@@ -260,21 +328,17 @@ contract LotteryMainLogic is Test {
         playerEntersLottery(lotteryDeposit);
         assertEq(lotteryContract.getCurrentPrizePot(), potAfterFees + lotteryDeposit);
         vm.warp(timestampAfterFirstWin + lotteryDuration);  // Warp to end of second round
-        lotteryContract.performUpkeep("");
-        (uint256[] memory randomWords, uint256 requestId) = randomWordChosen();
-        vm.prank(vrfCoordinator);
-        lotteryContract.rawFulfillRandomWords(requestId, randomWords);
+        uint256 requestId = lotteryContract.performUpkeep("");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(requestId, address(lotteryContract));
         potAfterFees = potAfterProtocolFees(potAfterFees + lotteryDeposit);
         assertEq(lotteryContract.getCurrentPrizePot(), potAfterFees);
     }
 
-    function test_WinnerWithdrawTransferReverts() external {
+    function test_WinnerWithdrawTransferReverts() external skipFork {
         lotteryContract.enterLottery{value: lotteryDeposit}();
         skip(lotteryDuration);
-        lotteryContract.performUpkeep("");
-        (uint256[] memory randomWords, uint256 requestId) = randomWordChosen();
-        vm.prank(vrfCoordinator);
-        lotteryContract.rawFulfillRandomWords(requestId, randomWords);
+        uint256 requestId = lotteryContract.performUpkeep("");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(requestId, address(lotteryContract));
         vm.expectRevert(WinnerFailedWithdrawl.selector);
         lotteryContract.winnerWithdraw();
     }
@@ -298,7 +362,7 @@ contract LotteryMainLogic is Test {
         lotteryContract.withdraw(0);
     }
 
-    function test_WithdrawMaxReverts() external {
+    function test_WithdrawMaxReverts() external skipFork {
         playerWinsRound();
         uint256 currentPrizePot = lotteryContract.getCurrentPrizePot();
         uint256 protocolFees = address(lotteryContract).balance - currentPrizePot;

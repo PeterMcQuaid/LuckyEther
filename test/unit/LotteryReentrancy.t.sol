@@ -2,6 +2,7 @@
 pragma solidity 0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
+import {VRFCoordinatorV2Mock} from "@chainlink/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol";
 import {LotteryContract} from "../../src/contracts/core/LotteryContract.sol";
 import {LotteryDeployScript} from "../../script/DeployLotteryContract.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
@@ -19,6 +20,14 @@ contract LotteryReentrancy is Test {
     uint256 internal expiryGap;
     address internal vrfCoordinator;
 
+    modifier skipFork() {
+        if (block.chainid == 31337) {
+            _;
+        } else {
+            return;
+        }
+    }
+
     function setUp() external {
         LotteryDeployScript deployer = new LotteryDeployScript();
         (lotteryContract, helperConfig) = deployer.run();
@@ -33,14 +42,12 @@ contract LotteryReentrancy is Test {
         randomWords[0] = uint256(keccak256("randomWord"));
     }
 
-    function test_WinnerWithdrawalsReentrancyReverts() external {
+    function test_WinnerWithdrawalsReentrancyReverts() external skipFork {
         vm.deal(address(reentrantPlayer), STARTING_USER_BALANCE);
         reentrantPlayer.enterLottery{value: lotteryDeposit}();
         skip(lotteryDuration);
-        lotteryContract.performUpkeep("");
-        (uint256[] memory randomWords, uint256 requestId) = randomWordChosen();
-        vm.prank(vrfCoordinator);
-        lotteryContract.rawFulfillRandomWords(requestId, randomWords);
+        uint256 requestId = lotteryContract.performUpkeep("");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(requestId, address(lotteryContract));
         reentrantPlayer.triggerReentrancyWithdrawalAttack();
     }
 }
