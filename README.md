@@ -1,6 +1,7 @@
 <a name="readme-top"></a>
 
 [![Unit Tests](https://github.com/PeterMcQuaid/LuckyEther/actions/workflows/build.yaml/badge.svg)](https://github.com/PeterMcQuaid/LuckyEther/actions/workflows/build.yaml) 
+[![MythXBadge](https://badgen.net/https/api.mythx.io/v1/projects/38f0122a-fead-4e5a-aebd-14fcd01516f6/badge/data?cache=300&icon=https://raw.githubusercontent.com/ConsenSys/mythx-github-badge/main/logo_white.svg)](https://docs.mythx.io/dashboard/github-badges)
  [![Coverage Status](https://coveralls.io/repos/github/PeterMcQuaid/LuckyEther/badge.svg?branch=master)](
 https://coveralls.io/github/PeterMcQuaid/LuckyEther?branch=master)
 [![Solidity](https://img.shields.io/badge/solidity-0.8.20-blue.svg)](https://github.com/ethereum/solidity/releases/tag/v0.8.20) 
@@ -198,16 +199,22 @@ slither .
 ```
 ### Mythril
 
-
+```
+myth analyze src/contracts/**/*.sol --solc-json mythril.config.json
+```
 
 
 ### Mythx
+
+```
+mythx analyze
+```
 
 
 
 ### Generate Inheritance and Control-Flow Graphs
 
-first [install surya](https://github.com/ConsenSys/surya/)
+First [install surya](https://github.com/ConsenSys/surya/)
 
 then run
 

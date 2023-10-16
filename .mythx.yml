@@ -1,0 +1,14 @@
+analyze:
+    mode: standard
+    create-group: true
+    group-name: LuckyEther
+    solc: 0.8.20
+    remappings:
+      - "ds-test/=lib/ds-test/src/"
+      - "forge-std/=lib/forge-std/src/"
+      - "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
+      - "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/"
+      - "@chainlink/contracts/=lib/chainlink/contracts/"
+      - "@solmate=lib/solmate/src/"
+    targets:
+      - src/contracts/

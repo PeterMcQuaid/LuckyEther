@@ -6,3 +6,7 @@ broadcast/
 # Dotenv file
 .env
 *.DS_Store
+
+
+coverage/
+coverage.json
