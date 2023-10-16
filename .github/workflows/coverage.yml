@@ -6,6 +6,7 @@ on:
 
 env:
   FOUNDRY_PROFILE: ci
+  DEPLOYER_ADDRESS: "0xfeACBb053CCcF794bF2810f0D08A46CC52EDBDf3"
 
 jobs:
   check:
@@ -39,7 +40,7 @@ jobs:
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ./coverage/lcov.info
+          path-to-lcov: ./lcov.info
 
 
 
