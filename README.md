@@ -1,6 +1,6 @@
 <a name="readme-top"></a>
 
-[![Unit Tests](https://github.com/PeterMcQuaid/LuckyEther/actions/workflows/test.yaml/badge.svg)](https://github.com/PeterMcQuaid/LuckyEther/actions/workflows/test.yaml) 
+[![Unit Tests](https://github.com/PeterMcQuaid/LuckyEther/actions/workflows/test.yml/badge.svg)](https://github.com/PeterMcQuaid/LuckyEther/actions/workflows/test.yml) 
 [![MythXBadge](https://badgen.net/https/api.mythx.io/v1/projects/38f0122a-fead-4e5a-aebd-14fcd01516f6/badge/data?cache=300&icon=https://raw.githubusercontent.com/ConsenSys/mythx-github-badge/main/logo_white.svg)](https://docs.mythx.io/dashboard/github-badges)
  [![Coverage Status](https://coveralls.io/repos/github/PeterMcQuaid/LuckyEther/badge.svg?branch=master)](
 https://coveralls.io/github/PeterMcQuaid/LuckyEther?branch=master)
