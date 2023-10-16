@@ -7,6 +7,7 @@ remappings = ["@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/", 
              "@solmate=lib/solmate/src/"]
 
 solc_version = "0.8.20"
+gas_reports = ["LotteryContract", "PauserRegistry"]
 
 # Removes 53 bytes of optional bytecode at end of deployed contract
 bytecode_hash = "none"

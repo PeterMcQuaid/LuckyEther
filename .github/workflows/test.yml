@@ -1,9 +1,10 @@
-name: test
+name: CI
 
 on: workflow_dispatch
 
 env:
   FOUNDRY_PROFILE: ci
+  DEPLOYER_ADDRESS: 0xfeACBb053CCcF794bF2810f0D08A46CC52EDBDf3
 
 jobs:
   check:
@@ -30,5 +31,5 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          forge test -vvv
+          make test-anvil
         id: test

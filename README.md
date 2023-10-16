@@ -112,13 +112,13 @@ LuckyEther is fully upgradeable and pausable and aims to take full advantage of 
 
 ## Roadmap
 
-- [x] **Testnets:**
-  - Arbitrum Goerli
-  - Sepolia
+**Testnets:**
+  - [ ] Arbitrum Goerli
+  - [x] Sepolia
 
-- [ ] **Coming Soon:**
-  - Arbitrum One
-  - Ethereum Mainnet
+**Mainnets:**
+  - [ ] Arbitrum One
+  - [ ] Ethereum Mainnet
 
 
 ## Prerequisites
@@ -214,48 +214,29 @@ mythx analyze
 
 ### Generate Inheritance and Control-Flow Graphs
 
-First [install surya](https://github.com/ConsenSys/surya/)
-
-then run
-
-`surya inheritance ./src/contracts/**/*.sol | dot -Tpng > InheritanceGraph.png`
-
-and/or
-
-`surya graph ./src/contracts/middleware/*.sol | dot -Tpng > MiddlewareControlFlowGraph.png`
-
-and/or
-
-`surya mdreport surya_report.md ./src/contracts/**/*.sol`
+First [install surya](https://github.com/ConsenSys/surya/), then run:
+```
+surya inheritance ./src/contracts/**/*.sol | dot -Tpng > InheritanceGraph.png
+```
+Or:
+```
+surya mdreport surya_report.md ./src/contracts/**/*.sol
+```
 
     
 ## Deployments
 
 ### Current Testnet Deployment
 
-#### Arbitrum Goerli 
-<p style="font-size: 12px;">ChainID: 421613</p>
+
+
+#### Sepolia <span style="font-size: 10px; margin-left: 12px;">[ChainID: 11155111]</span>
 
 | Name | Solidity | Proxy | Implementation | Notes |
-| -------- | -------- | -------- | -------- | -------- | 
-| StrategyManager | [`StrategyManager`](https://github.com/Layr-Labs/eigenlayer-contracts/blob/0139d6213927c0a7812578899ddd3dda58051928/src/contracts/core/StrategyManager.sol) | [`0x8586...075A`](https://etherscan.io/address/0x858646372CC42E1A627fcE94aa7A7033e7CF075A) | [`0x5d25...42Fb`](https://etherscan.io/address/0x5d25EEf8CfEdaA47d31fE2346726dE1c21e342Fb) | Proxy: [OpenZeppelin TUP@5.0.0](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/proxy/transparent/TransparentUpgradeableProxy.sol) 
-| DelegationManager | [`DelegationManager`](https://github.com/Layr-Labs/eigenlayer-contracts/blob/0139d6213927c0a7812578899ddd3dda58051928/src/contracts/core/DelegationManager.sol) | [`0x3905...f37A`](https://etherscan.io/address/0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A) | [`0xf97E...75e4`](https://etherscan.io/address/0xf97E97649Da958d290e84E6D571c32F4b7F475e4) | Proxy: [OpenZeppelin TUP@5.0.0](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/proxy/transparent/TransparentUpgradeableProxy.sol) |
-| PauserRegistry | [`PauserRegistry`](https://github.com/Layr-Labs/eigenlayer-contracts/blob/0139d6213927c0a7812578899ddd3dda58051928/src/contracts/permissions/PauserRegistry.sol) | - | [`0x0c43...7060`](https://etherscan.io/address/0x0c431C66F4dE941d089625E5B423D00707977060) | |
-| Pauser Multisig | [`GnosisSafe@1.3.0`](https://github.com/safe-global/safe-contracts/blob/v1.3.0/contracts/GnosisSafe.sol) | [`0x5050…2390`](https://etherscan.io/address/0x5050389572f2d220ad927CcbeA0D406831012390) | [`0xd9db...9552`](https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552) | Proxy: [`GnosisSafeProxy@1.3.0`](https://github.com/safe-global/safe-contracts/blob/v1.3.0/contracts/proxies/GnosisSafeProxy.sol) |
-| Community Multisig | [`GnosisSafe@1.3.0`](https://github.com/safe-global/safe-contracts/blob/v1.3.0/contracts/GnosisSafe.sol) | [`0xFEA4...c598`](https://etherscan.io/address/0xFEA47018D632A77bA579846c840d5706705Dc598) | [`0xd9db...9552`](https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552) | Proxy: [`GnosisSafeProxy@1.3.0`](https://github.com/safe-global/safe-contracts/blob/v1.3.0/contracts/proxies/GnosisSafeProxy.sol) |
-| Proxy Admin | [OpenZeppelin ProxyAdmin@4.7.1](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/proxy/transparent/ProxyAdmin.sol) | - | [`0x8b95...2444`](https://etherscan.io/address/0x8b9566AdA63B64d1E1dcF1418b43fd1433b72444) | |
-
-#### Sepolia 
-<p style="font-size: 12px;">ChainID: 11155111</p>
-
-| Name | Solidity | Proxy | Implementation | Notes |
-| -------- | -------- | -------- | -------- | -------- | 
-| StrategyManager | [`StrategyManager`](https://github.com/Layr-Labs/eigenlayer-contracts/blob/0139d6213927c0a7812578899ddd3dda58051928/src/contracts/core/StrategyManager.sol) | [`0x8586...075A`](https://etherscan.io/address/0x858646372CC42E1A627fcE94aa7A7033e7CF075A) | [`0x5d25...42Fb`](https://etherscan.io/address/0x5d25EEf8CfEdaA47d31fE2346726dE1c21e342Fb) | Proxy: [OpenZeppelin TUP@5.0.0](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/proxy/transparent/TransparentUpgradeableProxy.sol) 
-| DelegationManager | [`DelegationManager`](https://github.com/Layr-Labs/eigenlayer-contracts/blob/0139d6213927c0a7812578899ddd3dda58051928/src/contracts/core/DelegationManager.sol) | [`0x3905...f37A`](https://etherscan.io/address/0x39053D51B77DC0d36036Fc1fCc8Cb819df8Ef37A) | [`0xf97E...75e4`](https://etherscan.io/address/0xf97E97649Da958d290e84E6D571c32F4b7F475e4) | Proxy: [OpenZeppelin TUP@5.0.0](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/proxy/transparent/TransparentUpgradeableProxy.sol) |
-| PauserRegistry | [`PauserRegistry`](https://github.com/Layr-Labs/eigenlayer-contracts/blob/0139d6213927c0a7812578899ddd3dda58051928/src/contracts/permissions/PauserRegistry.sol) | - | [`0x0c43...7060`](https://etherscan.io/address/0x0c431C66F4dE941d089625E5B423D00707977060) | |
-| Pauser Multisig | [`GnosisSafe@1.3.0`](https://github.com/safe-global/safe-contracts/blob/v1.3.0/contracts/GnosisSafe.sol) | [`0x5050…2390`](https://etherscan.io/address/0x5050389572f2d220ad927CcbeA0D406831012390) | [`0xd9db...9552`](https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552) | Proxy: [`GnosisSafeProxy@1.3.0`](https://github.com/safe-global/safe-contracts/blob/v1.3.0/contracts/proxies/GnosisSafeProxy.sol) |
-| Community Multisig | [`GnosisSafe@1.3.0`](https://github.com/safe-global/safe-contracts/blob/v1.3.0/contracts/GnosisSafe.sol) | [`0xFEA4...c598`](https://etherscan.io/address/0xFEA47018D632A77bA579846c840d5706705Dc598) | [`0xd9db...9552`](https://etherscan.io/address/0xd9db270c1b5e3bd161e8c8503c55ceabee709552) | Proxy: [`GnosisSafeProxy@1.3.0`](https://github.com/safe-global/safe-contracts/blob/v1.3.0/contracts/proxies/GnosisSafeProxy.sol) |
-| Proxy Admin | [OpenZeppelin ProxyAdmin@4.7.1](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/proxy/transparent/ProxyAdmin.sol) | - | [`0x8b95...2444`](https://etherscan.io/address/0x8b9566AdA63B64d1E1dcF1418b43fd1433b72444) | |
+|--------| -------- |:--------:| -------- | -------- | 
+| LotteryContract | [`LotteryContract`](https://github.com/PeterMcQuaid/LuckyEther/blob//src/contracts/core/LotteryContract.sol) | [`0x3E18...c1E6`](https://sepolia.etherscan.io/address/0x3e181e1d26f6f3fc33f4626227ef7a491263c1e6) | [`0x6d56...d574`](https://sepolia.etherscan.io/address/0x6d564ac24f600c6aeb920c3b16cb2da99d23d574) | Proxy: [OpenZeppelin TUP@5.0.0](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/proxy/transparent/TransparentUpgradeableProxy.sol) 
+| PauserRegistry | [`PauserRegistry`](https://github.com/PeterMcQuaid/LuckyEther/blob//src/contracts/permissions/PauserRegistry.sol) | - | [`0x86Ed...54C8`](https://sepolia.etherscan.io/address/0x86ed2d12af5e2fad95da1ab36f5ea3773a0254c8) | |
+| Proxy Admin | [OpenZeppelin ProxyAdmin@5.0.0](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/proxy/transparent/ProxyAdmin.sol) | - | [`0x32dC...9A13`](https://sepolia.etherscan.io/address/0x32dca5c35a92925e986de019656ad76df2549a13) | |
 
 ## Legal Disclaimer
   
