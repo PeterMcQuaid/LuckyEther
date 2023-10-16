@@ -42,12 +42,13 @@ jobs:
       - name: Prune lcov.info
         run: |
           lcov --remove ./lcov.info -o ./lcov.info.pruned 'test/mocks/' 'script/HelperConfig.s.sol' 'script/Interactions.s.sol'
+          mv ./lcov.info.pruned ./lcov.info
 
       - name: Coveralls GitHub Action
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ./lcov.info.pruned
+          path-to-lcov: ./lcov.info
 
 
 
