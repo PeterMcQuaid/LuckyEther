@@ -36,9 +36,6 @@ jobs:
           forge coverage --report lcov
         id: test
 
-    name: Prune coverage
-    runs-on: ubuntu-latest
-    steps:
       - name: Install lcov
         run: apt-get update && apt-get install lcov -y
 
