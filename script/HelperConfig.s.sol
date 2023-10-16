@@ -23,9 +23,9 @@ contract HelperConfig is Script {
     // TEST CONSTANTS
 
     uint256 private constant LOTTERY_DEPOSIT_TESTNET = 0.01 ether;
-    uint256 private constant LOTTERY_DURATION = 10 hours;
-    uint256 private constant PRIZE_EXPIRY = 5 hours;
-    uint256 private constant EXPIRY_GAP = 4 hours;
+    uint256 private constant LOTTERY_DURATION = 1 days;
+    uint256 private constant PRIZE_EXPIRY = 12 hours;
+    uint256 private constant EXPIRY_GAP = 10 hours;
     uint32 private constant CALLBACK_GAS_LIMIT = 500000;
 
     constructor() {

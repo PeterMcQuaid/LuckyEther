@@ -14,19 +14,6 @@ interface IPauserRegistry {
 
     event RegistryOwnerChanged(address previousRegistryOwner, address newRegistryOwner);
 
-    /// @notice Mapping of pauser address to their pausing status
-    function isPauser(address pauser) external view returns (bool);
-
-    /// @notice Mapping of unpauser address to their unpausing status
-    function isUnpauser(address unpauser) external view returns (bool);
-
-    /**
-     * @notice Returns owner of registry, who has sole power to update registry address,
-     * as well as set and unset pausers and unpausers
-     * @dev "registryOwner" is initialized as deployer (msg.sender)
-     */
-    function registryOwner() external view returns (address); 
-
     /**
      * @notice Updates pauser status for "pauser"
      * @dev Should only be callable by current owner 
@@ -44,4 +31,17 @@ interface IPauserRegistry {
      * @dev Should only be callable by current owner 
      */ 
     function updateRegistryOwner(address newRegistryOwner) external;
+
+    /// @notice Mapping of pauser address to their pausing status
+    function isPauser(address pauser) external view returns (bool);
+
+    /// @notice Mapping of unpauser address to their unpausing status
+    function isUnpauser(address unpauser) external view returns (bool);
+
+    /**
+     * @notice Returns owner of registry, who has sole power to update registry address,
+     * as well as set and unset pausers and unpausers
+     * @dev "registryOwner" is initialized as deployer (msg.sender)
+     */
+    function registryOwner() external view returns (address); 
 }
