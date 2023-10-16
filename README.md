@@ -2,8 +2,7 @@
 
 [![Unit Tests](https://github.com/PeterMcQuaid/LuckyEther/actions/workflows/test.yml/badge.svg)](https://github.com/PeterMcQuaid/LuckyEther/actions/workflows/test.yml) 
 [![MythXBadge](https://badgen.net/https/api.mythx.io/v1/projects/38f0122a-fead-4e5a-aebd-14fcd01516f6/badge/data?cache=300&icon=https://raw.githubusercontent.com/ConsenSys/mythx-github-badge/main/logo_white.svg)](https://docs.mythx.io/dashboard/github-badges)
- [![Coverage Status](https://coveralls.io/repos/github/PeterMcQuaid/LuckyEther/badge.svg?branch=master)](
-https://coveralls.io/github/PeterMcQuaid/LuckyEther?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/PeterMcQuaid/LuckyEther/badge.svg?branch=main)](https://coveralls.io/github/PeterMcQuaid/LuckyEther?branch=main)
 [![Solidity](https://img.shields.io/badge/solidity-0.8.20-blue.svg)](https://github.com/ethereum/solidity/releases/tag/v0.8.20) 
  [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
  [![Chainlink](https://img.shields.io/badge/Powered%20by%20Chainlink-375BD2?logo=chainlink&logoColor=white)](https://chain.link/)

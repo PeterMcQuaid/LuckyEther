@@ -36,6 +36,16 @@ jobs:
           forge coverage --report lcov
         id: test
 
+    name: Prune coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install lcov
+        run: apt-get update && apt-get install lcov -y
+
+      - name: Prune lcov.info
+        run: |
+          lcov --remove ./lcov.info -o ./lcov.info.pruned 'test/mocks/' 'script/HelperConfig.s.sol' 'script/Interactions.s.sol'
+
       - name: Coveralls GitHub Action
         uses: coverallsapp/github-action@v2
         with:
