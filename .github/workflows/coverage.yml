@@ -41,7 +41,8 @@ jobs:
 
       - name: Prune lcov.info
         run: |
-          lcov --remove ./lcov.info -o ./lcov.info.pruned 'test/mocks/' 'script/HelperConfig.s.sol' 'script/Interactions.s.sol'
+          lcov --remove ./lcov.info -o ./lcov.info.pruned 'test/mocks/LinkToken.sol' \
+          'script/HelperConfig.s.sol' 'script/Interactions.s.sol' 'src/test/mocks/EmptyContract.sol'
           mv ./lcov.info.pruned ./lcov.info
 
       - name: Coveralls GitHub Action
