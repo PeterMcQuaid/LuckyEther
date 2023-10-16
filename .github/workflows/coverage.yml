@@ -37,7 +37,7 @@ jobs:
         id: test
 
       - name: Install lcov
-        run: apt-get update && apt-get install lcov -y
+        run: sudo apt-get update && sudo apt-get install lcov -y
 
       - name: Prune lcov.info
         run: |
