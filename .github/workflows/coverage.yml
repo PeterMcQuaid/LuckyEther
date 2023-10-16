@@ -34,11 +34,6 @@ jobs:
         run: |
           forge coverage --report lcov
         id: test
-        ignore:
-          - "./test/"
-          - "./script/HelperConfig.s.sol"
-          - "./script/Interactions.s.sol"
-          - "./src/Interactions.s.sol"
 
       - name: Coveralls GitHub Action
         uses: coverallsapp/github-action@v2
