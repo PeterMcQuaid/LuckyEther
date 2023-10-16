@@ -30,16 +30,23 @@ jobs:
           forge build --sizes
         id: build
 
-      - name: Coveralls GitHub Action
-        uses: coverallsapp/github-action@v2
+      - name: Run Forge coverage
         run: |
-          forge coverage
+          forge coverage --report lcov
         id: test
         ignore:
           - "./test/"
           - "./script/HelperConfig.s.sol"
           - "./script/Interactions.s.sol"
           - "./src/Interactions.s.sol"
+
+      - name: Coveralls GitHub Action
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./coverage/lcov.info
+
+
 
 
              
