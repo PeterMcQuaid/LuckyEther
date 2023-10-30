@@ -233,7 +233,7 @@ surya mdreport surya_report.md ./src/contracts/**/*.sol
 
 | Name | Solidity | Proxy | Implementation | Notes |
 |--------| -------- |:--------:| -------- | -------- | 
-| LotteryContract | [`LotteryContract`](https://github.com/PeterMcQuaid/LuckyEther/blob/main/src/contracts/core/LotteryContract.sol) | [`0xd796...03ed`](https://sepolia.etherscan.io/address/0xd796ecc87c8ed7b0971f9508653a8fe3fa4e03ed) | [`0x271f...c1eb`](https://sepolia.etherscan.io/address/0x271fe2a511cb10bf9b4b0422de5e62c2b971c1eb) | Proxy: [OpenZeppelin TUP@5.0.0](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/proxy/transparent/TransparentUpgradeableProxy.sol) 
+| LotteryContract | [`LotteryContract`](https://github.com/PeterMcQuaid/LuckyEther/blob/main/src/contracts/core/LotteryContract.sol) | [`0xd796...03ED`](https://sepolia.etherscan.io/address/0xd796ecc87c8ed7b0971f9508653a8fe3fa4e03ed) | [`0x271F...c1EB`](https://sepolia.etherscan.io/address/0x271fe2a511cb10bf9b4b0422de5e62c2b971c1eb) | Proxy: [OpenZeppelin TUP@5.0.0](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/proxy/transparent/TransparentUpgradeableProxy.sol) 
 | PauserRegistry | [`PauserRegistry`](https://github.com/PeterMcQuaid/LuckyEther/blob/main/src/contracts/permissions/PauserRegistry.sol) | - | [`0x86Ed...54C8`](https://sepolia.etherscan.io/address/0x86ed2d12af5e2fad95da1ab36f5ea3773a0254c8) | |
 | Proxy Admin | [OpenZeppelin ProxyAdmin@5.0.0](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/proxy/transparent/ProxyAdmin.sol) | - | [`0xfF06...8eF2`](https://sepolia.etherscan.io/address/0xfF0627Fc1bB8ebdB299Fb5DB1453a3966Cc88eF2) | |
 
