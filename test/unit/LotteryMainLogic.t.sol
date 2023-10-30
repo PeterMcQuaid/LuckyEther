@@ -8,6 +8,7 @@ import {LotteryContract} from "../../src/contracts/core/LotteryContract.sol";
 import {LotteryDeployScript} from "../../script/DeployLotteryContract.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {IPauserRegistry} from "../../src/contracts/interfaces/IPauserRegistry.sol";
+import {AddConsumer} from "../../script/Interactions.s.sol";
 
 contract LotteryMainLogic is Test {
     LotteryContract lotteryContract;

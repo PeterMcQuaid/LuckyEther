@@ -195,8 +195,11 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
      * expired AND there is at least one player in the lottery, and the functionality is not currently paused
      */
     function performUpkeep(bytes calldata /* performData */) external whenNotPaused returns (uint256 requestId) {
-        (bool upkeepNeeded, ) = checkUpkeep("");
+        (bool upkeepNeeded, bytes32 data) = checkUpkeep("");
         if (!upkeepNeeded) {
+            if (data == hex"ff") {
+                lastBlockTimestamp = block.timestamp;   // If time elapsed but no users, need to update timer
+            }
             revert UpkeepNotRequired();
         }
 
@@ -301,13 +304,15 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
     /**
      * @notice Called by Chainlink automation nodes to check if it's time to perform an upkeep
      * @return upkeepNeeded bool, whether or not a new winner can be drawn (current lottery session has expired) 
-     * @return performData for caller, currently unused
+     * @return performData for caller
      * @dev This function includes all the logic of a check that we would otherwise perform
      * @dev Public because we will call this function as a double-check in "performUpkeep()"
      */
-    function checkUpkeep(bytes memory /* checkData */) public view returns (bool upkeepNeeded, bytes memory /* performData */) {
-        if((lotteryUsers.length() == 0) || ((block.timestamp - lastBlockTimestamp) < lotteryDuration)) {
+    function checkUpkeep(bytes memory /* checkData */) public view returns (bool upkeepNeeded, bytes32 performData) {
+        if((block.timestamp - lastBlockTimestamp) < lotteryDuration) {
             return (false, "");     // Return an empty bytes value for the unused parameter
+        } else if (lotteryUsers.length() == 0) {
+            return (false, hex"ff"); 
         } else {
             return (true, "");    // Similarly, return an empty bytes value 
         }
@@ -342,9 +347,12 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
     /// @notice Completely clears current lottery set, potentially gas intensive
     function clearSet() private {
         uint256 length = lotteryUsers.length();
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length;) {
             // Always remove the first element until the set is empty
             lotteryUsers.remove(lotteryUsers.at(0));
+            unchecked {
+                ++i;
+            }
         }
     }
 }
