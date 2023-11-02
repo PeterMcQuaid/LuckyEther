@@ -199,21 +199,22 @@ contract LotteryContract is PausableUpgradeable, OwnableUpgradeable, ReentrancyG
         if (!upkeepNeeded) {
             if (data == hex"ff") {
                 lastBlockTimestamp = block.timestamp;   // If time elapsed but no users, need to update timer
+            } else {
+                revert UpkeepNotRequired();
             }
-            revert UpkeepNotRequired();
+        } else {
+            // Resets current winner before picking next
+            currentWinner = payable(address(0));
+
+            // Makes a request to the Chainlink VRF contract. Will revert if subscription is not set and funded
+            requestId = chainlinkVrfCoordinator.requestRandomWords(
+                vrfKeyHash,
+                vrfSubscriptionID,
+                REQUEST_CONFIRMATIONS,
+                callbackGasLimit,
+                NUM_WORDS
+            );
         }
-
-        // Resets current winner before picking next
-        currentWinner = payable(address(0));
-
-        // Makes a request to the Chainlink VRF contract. Will revert if subscription is not set and funded
-        requestId = chainlinkVrfCoordinator.requestRandomWords(
-            vrfKeyHash,
-            vrfSubscriptionID,
-            REQUEST_CONFIRMATIONS,
-            callbackGasLimit,
-            NUM_WORDS
-        );
     }
 
     /**

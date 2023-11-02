@@ -182,10 +182,10 @@ contract LotteryMainLogic is Test {
         lotteryContract.performUpkeep("");
     }
 
-    function test_NoPlayersReverts() external {
+    function test_NoPlayersTimestampUpdates() external {
         skip(lotteryDuration);
-        vm.expectRevert(UpkeepNotRequired.selector);
         lotteryContract.performUpkeep("");
+        assertEq(lotteryContract.getLastBlockTimestamp(), block.timestamp);
     }
 
     function test_UpkeepNeeded() external skipGoerliArbitrum {

@@ -101,7 +101,7 @@ contract InitializeImplementationScript is Script {
             _proxyAdmin.upgradeAndCall(
                 _transparentUpgradeableProxy,
                 _lotteryContract,
-                abi.encodeWithSignature("initialize(address)", _pauserRegistry)
+                abi.encodeWithSignature("initialize(address)", _pauserRegistry) // Just empty bytes "" if already initialized
             );
             vm.stopBroadcast();
         }
